@@ -6,9 +6,11 @@
     "main": "index.js",
     "author": "webfactory GmbH <info@webfactory.de>",
     "license": "MIT",
+    "dependencies": {
+        "@actions/core": "^3.0.0"
+    },
     "devDependencies": {
-        "@actions/core": "^1.2.4",
-        "@zeit/ncc": "^0.20.5"
+        "@zeit/ncc": "^0.22.3"
     },
     "scripts": {
         "build": "node scripts/build.js"

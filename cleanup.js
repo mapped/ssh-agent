@@ -3,9 +3,9 @@ const { execSync } = require('child_process')
 
 try {
     // Kill the started SSH agent
-    console.log('Stopping SSH agent')
+    core.info('Stopping SSH agent')
     execSync('kill ${SSH_AGENT_PID}', { stdio: 'inherit' })
 } catch (error) {
-    console.log(error.message);
-    console.log('Error stopping the SSH agent, proceeding anyway');
+    core.warning(error.message);
+    core.warning('Error stopping the SSH agent, proceeding anyway');
 }
