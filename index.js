@@ -1,8 +1,8 @@
-const core = require('@actions/core');
-const child_process = require('child_process');
-const fs = require('fs');
+import * as core from '@actions/core';
+import child_process from 'child_process';
+import fs from 'fs';
 
-try {
+function run() {
     const home = process.env['HOME'];
     const homeSsh = home + '/.ssh';
 
@@ -44,7 +44,10 @@ try {
 
     core.info("Keys added:");
     child_process.execSync('ssh-add -l', { stdio: 'inherit' });
+}
 
+try {
+    run();
 } catch (error) {
     core.setFailed(error.message);
 }

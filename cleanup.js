@@ -1,5 +1,5 @@
-const core = require('@actions/core')
-const { execSync } = require('child_process')
+import * as core from '@actions/core'
+import { execSync } from 'child_process'
 
 try {
     // Kill the started SSH agent
