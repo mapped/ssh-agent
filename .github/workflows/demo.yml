@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+      # The branch consumers use (uses: mapped/ssh-agent@git-repo-mapping).
+      - git-repo-mapping
   pull_request:
 
 jobs:
