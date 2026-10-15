@@ -1,28 +1,36 @@
-on: [push, pull_request]
+name: Demo
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 
 jobs:
-    single_key_demo:
-        strategy:
-            matrix:
-                os: [ubuntu-latest, macOS-latest]
-        runs-on: ${{ matrix.os }}
-        steps:
-            - uses: actions/checkout@v1
-            - name: Setup key
-              uses: ./
-              with:
-                  ssh-private-key: |
-                    ${{ secrets.DEMO_KEY }}
-                    ${{ secrets.DEMO_KEY_2 }}
+  single_key_demo:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
 
-    multiple_keys_demo:
-        strategy:
-            matrix:
-                os: [ubuntu-latest, macOS-latest]
-        runs-on: ${{ matrix.os }}
-        steps:
-            - uses: actions/checkout@v1
-            - name: Setup key
-              uses: ./
-              with:
-                  ssh-private-key: ${{ secrets.DEMO_KEY }}
+      - name: Setup key
+        uses: ./
+        with:
+          ssh-private-key: |
+            ${{ secrets.DEMO_KEY }}
+            ${{ secrets.DEMO_KEY_2 }}
+
+  multiple_keys_demo:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup key
+        uses: ./
+        with:
+          ssh-private-key: ${{ secrets.DEMO_KEY }}
