@@ -116,6 +116,9 @@ try {
                 keyFile = `${keyFile}.pub`;
                 fs.writeFileSync(`${homeSsh}/${keyFile}`, publicKey, { mode: '644' });
             } else {
+                // A public key left by an earlier keys-in-agent run would be offered instead of this key
+                // (OpenSSH reads the .pub next to an IdentityFile), so it must not stay behind either.
+                fs.rmSync(`${homeSsh}/${keyFile}.pub`, { force: true });
                 // Since we can't specify hostname/user/host options in a ssh-add call...
                 // Write the key to a file
                 fs.writeFileSync(`${homeSsh}/${keyFile}`, keyData, { mode: '600' });
