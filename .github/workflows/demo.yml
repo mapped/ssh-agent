@@ -36,3 +36,42 @@ jobs:
         uses: ./
         with:
           ssh-private-key: ${{ secrets.DEMO_KEY }}
+
+  # keys-in-agent with a throwaway key generated on the runner: needs no secrets, so it also runs on
+  # pull requests from forks. Checks the public key written to ~/.ssh is the loaded key's and that no
+  # private key file is left in ~/.ssh.
+  keys_in_agent_test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate a throwaway key
+        id: key
+        shell: bash
+        run: |
+          ssh-keygen -q -t ed25519 -N "" -C throwaway -f "$RUNNER_TEMP/throwaway"
+          {
+            echo "private<<EOF_KEY"
+            cat "$RUNNER_TEMP/throwaway"
+            echo "EOF_KEY"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup key in the agent only
+        uses: ./
+        with:
+          ssh-private-key: ${{ steps.key.outputs.private }}
+          repo-mappings: github.com/mapped/keys-in-agent-test
+          keys-in-agent: 'true'
+
+      - name: Check the public key and that no private key file exists
+        shell: bash
+        run: |
+          pub="$HOME/.ssh/keys-in-agent-test.github.com.key.pub"
+          want=$(ssh-keygen -y -f "$RUNNER_TEMP/throwaway" | cut -d' ' -f1,2)
+          got=$(cut -d' ' -f1,2 "$pub")
+          [ "$want" = "$got" ] || { echo "::error::$pub does not hold the loaded key"; exit 1; }
+          if grep -rl "PRIVATE KEY" "$HOME/.ssh"; then echo "::error::private key file in ~/.ssh"; exit 1; fi
+          ssh-add -L | cut -d' ' -f1,2 | grep -qxF "$want" || { echo "::error::key not in the agent"; exit 1; }
