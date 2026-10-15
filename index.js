@@ -110,9 +110,15 @@ function run() {
             if (keysInAgent) {
                 // A private key file left by an earlier run without keys-in-agent must not stay behind.
                 fs.rmSync(`${homeSsh}/${keyFile}`, { force: true });
+                // The agent derives the public key itself: the line ssh-add -L gains is this key's. That
+                // needs no ssh-keygen reading the private key from stdin, which fails on macOS.
+                const before = new Set(agentPublicKeys());
                 child_process.execSync('ssh-add -', { input: keyData });
-                // ssh-keygen cannot open /dev/stdin on the socket node hands a child as stdin; cat makes it a pipe.
-                const publicKey = child_process.execFileSync('sh', ['-c', 'cat | ssh-keygen -y -f /dev/stdin'], { input: keyData }).toString();
+                const added = agentPublicKeys().filter(k => !before.has(k));
+                if (added.length != 1) {
+                    throw new Error(`${keysInAgentName}: expected 1 new key in the agent for ${mapping.pseudoHost}, got ${added.length} (is the same key given twice?)`);
+                }
+                const publicKey = added[0] + "\n";
                 keyFile = `${keyFile}.pub`;
                 fs.writeFileSync(`${homeSsh}/${keyFile}`, publicKey, { mode: '644' });
             } else {
@@ -158,4 +164,17 @@ try {
     run();
 } catch (error) {
     core.setFailed(error.message);
+}
+
+// agentPublicKeys returns the public keys the agent holds, one OpenSSH line each. ssh-add -L exits
+// with 1 while the agent holds none.
+function agentPublicKeys() {
+    try {
+        return child_process.execFileSync('ssh-add', ['-L']).toString().split(/\r?\n/).filter(l => l.trim() != '');
+    } catch (e) {
+        if (e.status === 1) {
+            return [];
+        }
+        throw e;
+    }
 }

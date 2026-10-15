@@ -19624,8 +19624,13 @@ function run() {
       const keyData = key.replace("\r\n", "\n").trim() + "\n";
       if (keysInAgent) {
         import_fs2.default.rmSync(`${homeSsh}/${keyFile}`, { force: true });
+        const before = new Set(agentPublicKeys());
         import_child_process.default.execSync("ssh-add -", { input: keyData });
-        const publicKey = import_child_process.default.execFileSync("sh", ["-c", "cat | ssh-keygen -y -f /dev/stdin"], { input: keyData }).toString();
+        const added = agentPublicKeys().filter((k) => !before.has(k));
+        if (added.length != 1) {
+          throw new Error(`${keysInAgentName}: expected 1 new key in the agent for ${mapping.pseudoHost}, got ${added.length} (is the same key given twice?)`);
+        }
+        const publicKey = added[0] + "\n";
         keyFile = `${keyFile}.pub`;
         import_fs2.default.writeFileSync(`${homeSsh}/${keyFile}`, publicKey, { mode: "644" });
       } else {
@@ -19663,6 +19668,16 @@ try {
   run();
 } catch (error2) {
   setFailed(error2.message);
+}
+function agentPublicKeys() {
+  try {
+    return import_child_process.default.execFileSync("ssh-add", ["-L"]).toString().split(/\r?\n/).filter((l) => l.trim() != "");
+  } catch (e) {
+    if (e.status === 1) {
+      return [];
+    }
+    throw e;
+  }
 }
 /*! Bundled license information:
 
