@@ -125,6 +125,7 @@ const privateKeyName = 'ssh-private-key';
 const repoMappingsName = 'repo-mappings';
 const authSockName = 'ssh-auth-sock';
 const dropExtraHeaderName = 'drop-extra-header';
+const keysInAgentName = 'keys-in-agent';
 
 try {
 
@@ -202,6 +203,12 @@ try {
         });
     }
 
+    // With keys-in-agent, a mapped key lives only in the agent: ~/.ssh gets just its public key, which
+    // tells ssh which agent key to offer for the repo (IdentitiesOnly). Nothing copied out of ~/.ssh,
+    // e.g. into a Docker build context, then carries a private key; builds reach the keys through the
+    // forwarded agent socket instead.
+    const keysInAgent = (core.getInput(keysInAgentName).toLowerCase() === 'true');
+
     // Add private keys to ssh-agent
     console.log("Adding private key to agent");
     const privateKeys = privateKey.split(/(?=-----BEGIN)/);
@@ -215,10 +222,21 @@ try {
         if (repoMappings) {
             let mapping = repoMappings[i];
             let keyFile = `${mapping.pseudoHost}.key`;
+            const keyData = key.replace("\r\n", "\n").trim() + "\n";
 
-            // Since we can't specify hostname/user/host options in a ssh-add call...
-            // Write the key to a file
-            fs.writeFileSync(`${homeSsh}/${keyFile}`, key.replace("\r\n", "\n").trim() + "\n", { mode: '600' });
+            if (keysInAgent) {
+                // A private key file left by an earlier run without keys-in-agent must not stay behind.
+                fs.rmSync(`${homeSsh}/${keyFile}`, { force: true });
+                child_process.execSync('ssh-add -', { input: keyData });
+                // ssh-keygen cannot open /dev/stdin on the socket node hands a child as stdin; cat makes it a pipe.
+                const publicKey = child_process.execFileSync('sh', ['-c', 'cat | ssh-keygen -y -f /dev/stdin'], { input: keyData }).toString();
+                keyFile = `${keyFile}.pub`;
+                fs.writeFileSync(`${homeSsh}/${keyFile}`, publicKey, { mode: '644' });
+            } else {
+                // Since we can't specify hostname/user/host options in a ssh-add call...
+                // Write the key to a file
+                fs.writeFileSync(`${homeSsh}/${keyFile}`, keyData, { mode: '600' });
+            }
 
             // Update ssh config
             let hostEntry = `\nHost http.${mapping.pseudoHost}\n`
@@ -242,7 +260,7 @@ try {
     console.log("Keys added:");
     if (repoMappings) {
         repoMappings.forEach(function(key) {
-            console.log(`~/.ssh/${key.pseudoHost}.key`);
+            console.log(`~/.ssh/${key.pseudoHost}.key${keysInAgent ? '.pub (private key in the agent)' : ''}`);
         });
     } else {
         child_process.execSync('ssh-add -l', { stdio: 'inherit' });

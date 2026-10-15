@@ -13,6 +13,9 @@ inputs:
     drop-extra-header:
         description: 'Remove the .gitconfig http.extraheader auth token added by actions/checkout@v2'
         required: false
+    keys-in-agent:
+        description: 'With repo-mappings: load the keys into the agent and write only their public keys to ~/.ssh, so no private key file exists. Builds must reach the keys through the agent (e.g. docker build --ssh default).'
+        required: false
 
 runs:
     using: 'node24'
