@@ -1,26 +1,28 @@
-name: 'webfactory/ssh-agent'
-description: 'Run `ssh-agent` and load an SSH key to access other private repositories'
+name: webfactory/ssh-agent
+description: Run `ssh-agent` and load an SSH key to access other private repositories
 inputs:
-    ssh-private-key:
-        description: 'Private SSH key to register in the SSH agent'
-        required: true
-    repo-mappings:
-        description: 'Git Repo Mappings, order and count must match ssh-private-key'
-        required: false
-    ssh-auth-sock:
-        description: 'Where to place the SSH Agent auth socket'
-        required: false
-    drop-extra-header:
-        description: 'Remove the .gitconfig http.extraheader auth token added by actions/checkout@v2'
-        required: false
-    keys-in-agent:
-        description: 'With repo-mappings: load the keys into the agent and write only their public keys to ~/.ssh, so no private key file exists. Builds must reach the keys through the agent (e.g. docker build --ssh default).'
-        required: false
-
+  ssh-private-key:
+    description: Private SSH key to register in the SSH agent
+    required: true
+  repo-mappings:
+    description: Git Repo Mappings, order and count must match ssh-private-key
+    required: false
+  ssh-auth-sock:
+    description: Where to place the SSH Agent auth socket
+    required: false
+  drop-extra-header:
+    description: Remove the .gitconfig http.extraheader auth token added by actions/checkout@v2
+    required: false
+  keys-in-agent:
+    description: >-
+      With repo-mappings: load the keys into the agent and write only their public keys to ~/.ssh, so
+      no private key file exists. Builds must reach the keys through the agent (e.g. docker build
+      --ssh default).
+    required: false
 runs:
-    using: 'node24'
-    main: 'dist/index.js'
-    post: 'dist/cleanup.js'
+  using: node24
+  main: dist/index.js
+  post: dist/cleanup.js
 branding:
-    icon: loader
-    color: 'yellow'
+  icon: loader
+  color: yellow

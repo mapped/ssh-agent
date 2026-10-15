@@ -1,7 +1,7 @@
-const core = require('@actions/core');
-const child_process = require('child_process');
-const fs = require('fs');
-const os = require('os');
+import * as core from '@actions/core';
+import child_process from 'child_process';
+import fs from 'fs';
+import os from 'os';
 
 // Param names
 const privateKeyName = 'ssh-private-key';
@@ -10,7 +10,7 @@ const authSockName = 'ssh-auth-sock';
 const dropExtraHeaderName = 'drop-extra-header';
 const keysInAgentName = 'keys-in-agent';
 
-try {
+function run() {
 
     const home = os.homedir();
     const homeSsh = home + '/.ssh';
@@ -152,6 +152,10 @@ try {
         child_process.execSync('ssh-add -l', { stdio: 'inherit' });
     }
 
+}
+
+try {
+    run();
 } catch (error) {
     core.setFailed(error.message);
 }
